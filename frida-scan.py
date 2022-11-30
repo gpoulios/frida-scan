@@ -19,7 +19,7 @@ def on_message(message, data):
 
 if __name__ == '__main__':
     try:
-        parser = OptionParser(usage="usage: %prog [options] <process_to_hook>",version="%prog 1.0")
+        parser = OptionParser(usage="usage: %prog [options] <process_to_hook> <pattern_to_search>",version="%prog 1.0")
         parser.add_option("-A", "--attach", action="store_true", default=False,help="Attach to a running process")
         parser.add_option("-S", "--spawn", action="store_true", default=False,help="Spawn a new process and attach")
         parser.add_option("-P", "--pid", action="store_true", default=False,help="Attach to a pid process")
@@ -67,8 +67,10 @@ if __name__ == '__main__':
                     onMatch: function(address, size) {
                         retval += 1;
                         console.log('[+] Pattern found at: ' + address.toString()+', '+(range.file!=null && range.file.path != null ? range.file.path : "<unknow>" ));
-                        if (%s)
-                            console.log(hexdump(address, { ascii:true, length: %s }));
+                        if (%s) {
+                            var length = %s;
+                            console.log(hexdump(address.sub(length/2), { ascii:true, length: length }));
+                        }
                     },
                     onError: function(reason) {
                         console.log('[!] There was an error scanning memory : '+reason);
