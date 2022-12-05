@@ -19,12 +19,14 @@ def on_message(message, data):
 
 if __name__ == '__main__':
     try:
-        parser = OptionParser(usage="usage: %prog [options] <process_to_hook> <pattern_to_search>",version="%prog 1.0")
-        parser.add_option("-A", "--attach", action="store_true", default=False,help="Attach to a running process")
-        parser.add_option("-S", "--spawn", action="store_true", default=False,help="Spawn a new process and attach")
-        parser.add_option("-P", "--pid", action="store_true", default=False,help="Attach to a pid process")
-        parser.add_option("-o", "--output", action="store_true", default=False,help="Output folder")
-        parser.add_option("-v", "--verbose", action="store_true", default=False,help="Verbose")
+        parser = OptionParser(usage="usage: %prog [options] <process_to_hook> <pattern_to_search>", version="%prog 1.0")
+        parser.add_option("-A", "--attach", action="store_true", default=False, help="Attach to a running process")
+        parser.add_option("-S", "--spawn", action="store_true", default=False, help="Spawn a new process and attach")
+        parser.add_option("-P", "--pid", action="store_true", default=False, help="Attach to a pid process")
+        parser.add_option("-x", "--hex", action="store_true", default=False, help="Treat the input as frida " +
+            "Memory.scan pattern (hex encoded with spaces, and potentially wildcards '?')")
+        parser.add_option("-o", "--output", action="store_true", default=False, help="Output folder")
+        parser.add_option("-v", "--verbose", action="store_true", default=False, help="Verbose")
 
         (options, args) = parser.parse_args()
         if (options.spawn):
@@ -51,10 +53,32 @@ if __name__ == '__main__':
             var ranges = Process.enumerateRangesSync({protection: 'r--', coalesce: true});
             var range;
             var retval = (ranges.length > 0) ? 0 : -1;
+            var pattern = '%s';
+            var isHex = %s;
 
-            function toScanPatt(vStr) {
-                return vStr.split('').map( c => c=c.charCodeAt(0).toString(16)).join(' ');
+            if (isHex) {
+                pattern = pattern
+                    .trim()
+                    .split(' ')
+                    .map(function(s) {
+                        s = s.replace(/^0x/, '')
+                             .replace(/h$/, '');
+                        return s.length == 1 ? '0' + s : s;
+                    })
+                    .join('')
+                    .replace(/\s/g, '');
+
+                pattern = pattern.toLowerCase();
+                if (pattern.length %% 2 != 0)
+                    pattern = '0' + pattern;
+                pattern = pattern.replace(/(..)/g, '$1 ').trimEnd();
+            } else {
+                pattern = pattern
+                    .split('')
+                    .map(c => c=c.charCodeAt(0).toString(16)).join(' ');
             }
+
+            console.log("[!] Parsed pattern: " + pattern);
 
             function processNext() {
                 range = ranges.pop();
@@ -63,10 +87,10 @@ if __name__ == '__main__':
                     return;
                 }
 
-                Memory.scan(range.base, range.size, toScanPatt('%s'), {
+                Memory.scan(range.base, range.size, pattern, {
                     onMatch: function(address, size) {
                         retval += 1;
-                        console.log('[+] Pattern found at: ' + address.toString()+', '+(range.file!=null && range.file.path != null ? range.file.path : "<unknow>" ));
+                        console.log('[+] Pattern found at: ' + address.toString() + ', ' + (range.file!=null && range.file.path != null ? range.file.path : "<unknown>" ));
                         if (%s) {
                             var length = %s;
                             console.log(hexdump(address.sub(length/2), { ascii:true, length: length }));
@@ -87,7 +111,7 @@ if __name__ == '__main__':
             }
             processNext();
 
-        """ % (pattern, str(options.verbose).lower(), 256))
+        """ % (pattern, str(options.hex).lower(), str(options.verbose).lower(), 256))
 
         script.on('message', on_message)
         script.load()
