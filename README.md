@@ -4,7 +4,7 @@ A small utilities to scan process memory and search patterns using frida with a 
 
 ## Usage
 ```
-Usage: frida-scan [options] <process_to_hook> <ASCII pattern>
+Usage: frida-scan [options] <process_to_hook> <pattern_to_search>
 
 Options:
   --version      show program's version number and exit
@@ -12,6 +12,8 @@ Options:
   -A, --attach   Attach to a running process
   -S, --spawn    Spawn a new process and attach
   -P, --pid      Attach to a pid process
+  -x, --hex      Treat the pattern as a frida Memory.scan pattern
+                 (hex-encoded with spaces, and potentially wildcards '?')
   -o, --output   Output folder
   -v, --verbose  Verbose
 ```

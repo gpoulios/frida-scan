@@ -23,8 +23,8 @@ if __name__ == '__main__':
         parser.add_option("-A", "--attach", action="store_true", default=False, help="Attach to a running process")
         parser.add_option("-S", "--spawn", action="store_true", default=False, help="Spawn a new process and attach")
         parser.add_option("-P", "--pid", action="store_true", default=False, help="Attach to a pid process")
-        parser.add_option("-x", "--hex", action="store_true", default=False, help="Treat the input as frida " +
-            "Memory.scan pattern (hex encoded with spaces, and potentially wildcards '?')")
+        parser.add_option("-x", "--hex", action="store_true", default=False, help="Treat the pattern as a frida " +
+            "Memory.scan pattern (hex-encoded with spaces, and potentially wildcards '?')")
         parser.add_option("-o", "--output", action="store_true", default=False, help="Output folder")
         parser.add_option("-v", "--verbose", action="store_true", default=False, help="Verbose")
 
@@ -90,7 +90,8 @@ if __name__ == '__main__':
                 Memory.scan(range.base, range.size, pattern, {
                     onMatch: function(address, size) {
                         retval += 1;
-                        console.log('[+] Pattern found at: ' + address.toString() + ', ' + (range.file!=null && range.file.path != null ? range.file.path : "<unknown>" ));
+                        console.log('[+] Pattern found at: ' + address.toString() + ', ' +
+                            (range.file!=null && range.file.path != null ? range.file.path : "<unknown>" ));
                         if (%s) {
                             var length = %s;
                             console.log(hexdump(address.sub(length/2), { ascii:true, length: length }));
